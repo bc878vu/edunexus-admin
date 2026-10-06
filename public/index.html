@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EduNexus Master Admin Dashboard</title>
+<style>
+:root{--primary:#2563eb;--success:#10b981;--danger:#ef4444;--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f8fafc;--muted:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);padding:24px}
+.container{max-width:1150px;margin:0 auto}
+.head-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px}
+.logo-title{display:flex;align-items:center;gap:12px}
+.logo{background:linear-gradient(135deg,#2563eb,#38bdf8);padding:8px 14px;border-radius:10px;font-weight:900;font-size:16px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
+.stat-card p{color:var(--muted);font-size:12px;font-weight:600;margin-bottom:6px}
+.stat-card h3{font-size:26px;font-weight:800}
+.action-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.input-group{display:flex;gap:10px;flex:1;min-width:300px}
+input{background:#0f172a;border:1px solid var(--border);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;flex:1}
+button{appearance:none;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:0.15s ease}
+button.primary{background:var(--primary);color:#fff}
+button.success{background:var(--success);color:#fff}
+button.danger{background:var(--danger);color:#fff}
+button.secondary{background:#334155;color:#fff}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+th{background:#0f172a;color:var(--muted);padding:14px 16px;font-weight:700;border-bottom:1px solid var(--border)}
+td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase}
+.badge.active{background:rgba(16,185,129,0.2);color:var(--success);border:1px solid rgba(16,185,129,0.4)}
+.badge.blocked{background:rgba(239,68,68,0.2);color:var(--danger);border:1px solid rgba(239,68,68,0.4)}
+.key-code{font-family:monospace;font-weight:800;color:#38bdf8;background:#0f172a;padding:3px 8px;border-radius:6px}
+#authModal{position:fixed;inset:0;background:rgba(15,23,42,0.95);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;text-align:center}
+.login-box h2{margin-bottom:8px;font-size:18px}
+.login-box p{color:var(--muted);font-size:12px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="authModal">
+  <div class="login-box">
+    <h2>🔐 Admin Access Required</h2>
+    <p>Default password is <b>admin</b></p>
+    <input type="password" id="adminPass" placeholder="Enter Password" style="margin-bottom:12px;width:100%">
+    <button class="primary" style="width:100%" onclick="login()">Enter Dashboard</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="head-bar">
+    <div class="logo-title">
+      <div class="logo">EduNexus</div>
+      <div>
+        <h2>Master Admin Panel</h2>
+        <p style="font-size:12px;color:var(--muted)">Central Device Management & Remote License Gatekeeper</p>
+      </div>
+    </div>
+    <button class="secondary" onclick="loadDashboard()">🔄 Refresh Live Data</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><p>TOTAL GENERATED KEYS</p><h3 id="statTotal">0</h3></div>
+    <div class="stat-card"><p>ACTIVE LICENSES</p><h3 id="statActive" style="color:var(--success)">0</h3></div>
+    <div class="stat-card"><p>BLOCKED USERS</p><h3 id="statBlocked" style="color:var(--danger)">0</h3></div>
+  </div>
+
+  <div class="action-row">
+    <div class="input-group">
+      <input type="text" id="newUserName" placeholder="Student Name (e.g. Asad Ali)">
+      <input type="text" id="newUserContact" placeholder="Phone / WhatsApp Number">
+      <button class="success" onclick="createLicense()">➕ Generate New Key</button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>License Key</th>
+          <th>Student Name</th>
+          <th>Contact</th>
+          <th>Device Bound</th>
+          <th>Last Active</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="licenseTableBody">
+        <tr><td colspan="7" style="text-align:center">Loading data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+let token = localStorage.getItem('adminToken');
+if (token) document.getElementById('authModal').style.display = 'none';
+
+async function login() {
+  const pass = document.getElementById('adminPass').value;
+  const res = await fetch('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass })
+  });
+  const data = await res.json();
+  if (data.ok) {
+    localStorage.setItem('adminToken', data.token);
+    document.getElementById('authModal').style.display = 'none';
+    loadDashboard();
+  } else {
+    alert("Incorrect password!");
+  }
+}
+
+async function loadDashboard() {
+  const res = await fetch('/api/admin/stats');
+  const data = await res.json();
+
+  document.getElementById('statTotal').textContent = data.totalKeys;
+  document.getElementById('statActive').textContent = data.activeKeys;
+  document.getElementById('statBlocked').textContent = data.blockedKeys;
+
+  const tbody = document.getElementById('licenseTableBody');
+  tbody.innerHTML = '';
+
+  data.licenses.forEach(l => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="key-code">${l.key}</span></td>
+      <td><b>${l.user}</b></td>
+      <td>${l.contact}</td>
+      <td style="font-family:monospace;font-size:11px">${l.deviceId || '<span style="color:#f59e0b">Unbound</span>'}</td>
+      <td style="font-size:12px;color:var(--muted)">${l.lastActive === 'Never' ? 'Never' : new Date(l.lastActive).toLocaleString()}</td>
+      <td><span class="badge ${l.status}">${l.status}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="${l.status === 'active' ? 'danger' : 'success'}" style="padding:5px 10px;font-size:11px" onclick="toggleStatus('${l.key}')">
+          ${l.status === 'active' ? '🛑 Block' : '✅ Unblock'}
+        </button>
+        <button class="secondary" style="padding:5px 8px;font-size:11px" onclick="resetDevice('${l.key}')" title="Reset PC">🔄 Reset PC</button>
+        <button class="secondary" style="padding:5px 8px;font-size:11px;background:#450a0a;color:#fca5a5" onclick="deleteKey('${l.key}')">🗑️</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function createLicense() {
+  const user = document.getElementById('newUserName').value;
+  const contact = document.getElementById('newUserContact').value;
+  if (!user) return alert("Please enter Student name!");
+
+  await fetch('/api/admin/create-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user, contact })
+  });
+
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserContact').value = '';
+  loadDashboard();
+}
+
+async function toggleStatus(key) {
+  await fetch('/api/admin/toggle-status', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key })
+  });
+  loadDashboard();
+}
+
+async function resetDevice(key) {
+  if (!confirm("Clear device binding for this key? User can connect on a new computer.")) return;
+  await fetch('/api/admin/reset-device', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key })
+  });
+  loadDashboard();
+}
+
+async function deleteKey(key) {
+  if (!confirm("Permanently delete this license key?")) return;
+  await fetch('/api/admin/delete-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key })
+  });
+  loadDashboard();
+}
+
+if (token) loadDashboard();
+</script>
+</body>
+</html>

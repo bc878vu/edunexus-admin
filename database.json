@@ -1,0 +1,23 @@
+{
+  "adminPassword": "admin",
+  "licenses": [
+    {
+      "key": "EDU-7P0S-ERLP",
+      "user": "asad",
+      "contact": "03098851445",
+      "deviceId": "DEV-O8F7834-MUX0F38Y",
+      "status": "active",
+      "createdAt": "2026-10-06T18:26:43.466Z",
+      "lastActive": "2026-10-06T18:26:58.923Z"
+    },
+    {
+      "key": "EDU-VIP-101",
+      "user": "Test Student",
+      "contact": "923001234567",
+      "deviceId": "",
+      "status": "active",
+      "createdAt": "2026-10-06T18:25:07.787Z",
+      "lastActive": "Never"
+    }
+  ]
+}
