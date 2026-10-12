@@ -5,46 +5,59 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EduNexus Master Admin Dashboard</title>
 <style>
-:root{--primary:#2563eb;--success:#10b981;--danger:#ef4444;--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f8fafc;--muted:#94a3b8}
+:root{--primary:#2563eb;--success:#10b981;--danger:#ef4444;--warning:#f59e0b;--bg:#0f172a;--card:#1e293b;--border:#334155;--text:#f8fafc;--muted:#94a3b8}
 *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,sans-serif}
 body{background:var(--bg);color:var(--text);padding:24px}
-.container{max-width:1150px;margin:0 auto}
-.head-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px}
+.container{max-width:1180px;margin:0 auto}
+.head-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:16px}
 .logo-title{display:flex;align-items:center;gap:12px}
 .logo{background:linear-gradient(135deg,#2563eb,#38bdf8);padding:8px 14px;border-radius:10px;font-weight:900;font-size:16px}
+.head-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.server-state{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border:1px solid var(--border);border-radius:999px;color:var(--muted);font-size:11px;font-weight:800}
+.server-state.online{color:#6ee7b7;border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.08)}
+.server-state.offline{color:#fca5a5;border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px}
 .stat-card p{color:var(--muted);font-size:12px;font-weight:600;margin-bottom:6px}
 .stat-card h3{font-size:26px;font-weight:800}
 .action-row{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
 .input-group{display:flex;gap:10px;flex:1;min-width:300px}
-input{background:#0f172a;border:1px solid var(--border);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;flex:1}
-button{appearance:none;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:0.15s ease}
+input{background:#0f172a;border:1px solid var(--border);color:#fff;padding:10px 14px;border-radius:8px;font-size:13px;flex:1;min-width:0}
+button{appearance:none;border:none;border-radius:8px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s ease}
+button:hover{filter:brightness(1.08)}
+button:disabled{opacity:.55;cursor:not-allowed}
 button.primary{background:var(--primary);color:#fff}
 button.success{background:var(--success);color:#fff}
 button.danger{background:var(--danger);color:#fff}
 button.secondary{background:#334155;color:#fff}
-.table-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-table{width:100%;border-collapse:collapse;text-align:left;font-size:13px}
+button.warning{background:#78350f;color:#fde68a;border:1px solid #92400e}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:auto}
+table{width:100%;border-collapse:collapse;text-align:left;font-size:13px;min-width:980px}
 th{background:#0f172a;color:var(--muted);padding:14px 16px;font-weight:700;border-bottom:1px solid var(--border)}
-td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
+td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
 .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase}
-.badge.active{background:rgba(16,185,129,0.2);color:var(--success);border:1px solid rgba(16,185,129,0.4)}
-.badge.blocked{background:rgba(239,68,68,0.2);color:var(--danger);border:1px solid rgba(239,68,68,0.4)}
-.key-code{font-family:monospace;font-weight:800;color:#38bdf8;background:#0f172a;padding:3px 8px;border-radius:6px}
-#authModal{position:fixed;inset:0;background:rgba(15,23,42,0.95);display:flex;align-items:center;justify-content:center;z-index:9999}
-.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px;text-align:center}
+.badge.active{background:rgba(16,185,129,.2);color:var(--success);border:1px solid rgba(16,185,129,.4)}
+.badge.blocked{background:rgba(239,68,68,.2);color:var(--danger);border:1px solid rgba(239,68,68,.4)}
+.key-code{font-family:monospace;font-weight:800;color:#38bdf8;background:#0f172a;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.actions{display:flex;gap:6px;flex-wrap:wrap}
+.actions button{padding:5px 9px;font-size:11px}
+#authModal{position:fixed;inset:0;background:rgba(15,23,42,.97);display:flex;align-items:center;justify-content:center;z-index:9999;padding:18px}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:360px;max-width:100%;text-align:center}
 .login-box h2{margin-bottom:8px;font-size:18px}
-.login-box p{color:var(--muted);font-size:12px;margin-bottom:16px}
+.login-box p{color:var(--muted);font-size:12px;margin-bottom:16px;line-height:1.5}
+.error-box{display:none;margin:0 0 18px;padding:12px 14px;border-radius:10px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.1);color:#fecaca;font-size:12px;line-height:1.5}
+@media(max-width:700px){body{padding:12px}.head-bar{align-items:flex-start;flex-direction:column}.head-actions{justify-content:flex-start}.input-group{min-width:100%;flex-direction:column}}
 </style>
 </head>
 <body>
 <div id="authModal">
   <div class="login-box">
     <h2>🔐 Admin Access Required</h2>
-    <p>Default password is <b>admin</b></p>
-    <input type="password" id="adminPass" placeholder="Enter Password" style="margin-bottom:12px;width:100%">
-    <button class="primary" style="width:100%" onclick="login()">Enter Dashboard</button>
+    <p>Enter the admin password to open the persistent license dashboard.</p>
+    <input type="password" id="adminPass" placeholder="Enter admin password" style="margin-bottom:12px;width:100%">
+    <button class="primary" id="loginBtn" style="width:100%" onclick="login()">Enter Dashboard</button>
+    <p id="loginError" style="display:none;color:#fca5a5;margin-top:12px;margin-bottom:0"></p>
   </div>
 </div>
 
@@ -54,11 +67,17 @@ td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
       <div class="logo">EduNexus</div>
       <div>
         <h2>Master Admin Panel</h2>
-        <p style="font-size:12px;color:var(--muted)">Central Device Management & Remote License Gatekeeper</p>
+        <p style="font-size:12px;color:var(--muted)">Persistent License & Device Management</p>
       </div>
     </div>
-    <button class="secondary" onclick="loadDashboard()">🔄 Refresh Live Data</button>
+    <div class="head-actions">
+      <span id="serverState" class="server-state"><span class="dot"></span><span>Checking server</span></span>
+      <button class="secondary" onclick="loadDashboard()">🔄 Refresh</button>
+      <button class="warning" onclick="logout()">↪ Logout</button>
+    </div>
   </div>
+
+  <div id="pageError" class="error-box"></div>
 
   <div class="stats-grid">
     <div class="stat-card"><p>TOTAL GENERATED KEYS</p><h3 id="statTotal">0</h3></div>
@@ -68,9 +87,9 @@ td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
 
   <div class="action-row">
     <div class="input-group">
-      <input type="text" id="newUserName" placeholder="Student Name (e.g. Asad Ali)">
-      <input type="text" id="newUserContact" placeholder="Phone / WhatsApp Number">
-      <button class="success" onclick="createLicense()">➕ Generate New Key</button>
+      <input type="text" id="newUserName" maxlength="120" placeholder="Student Name (e.g. Asad Ali)">
+      <input type="text" id="newUserContact" maxlength="120" placeholder="Phone / WhatsApp Number">
+      <button class="success" id="createBtn" onclick="createLicense()">➕ Generate New Key</button>
     </div>
   </div>
 
@@ -95,104 +114,403 @@ td{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.05)}
 </div>
 
 <script>
-let token = localStorage.getItem('adminToken');
-if (token) document.getElementById('authModal').style.display = 'none';
+let token = localStorage.getItem('adminToken') || '';
 
-async function login() {
-  const pass = document.getElementById('adminPass').value;
-  const res = await fetch('/api/admin/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: pass })
-  });
-  const data = await res.json();
-  if (data.ok) {
-    localStorage.setItem('adminToken', data.token);
-    document.getElementById('authModal').style.display = 'none';
-    loadDashboard();
-  } else {
-    alert("Incorrect password!");
+function showAuth(message) {
+  document.getElementById('authModal').style.display = 'flex';
+  if (message) {
+    const el = document.getElementById('loginError');
+    el.textContent = message;
+    el.style.display = 'block';
   }
 }
 
-async function loadDashboard() {
-  const res = await fetch('/api/admin/stats');
-  const data = await res.json();
+function hideAuth() {
+  document.getElementById('authModal').style.display = 'none';
+  document.getElementById('loginError').style.display = 'none';
+}
 
-  document.getElementById('statTotal').textContent = data.totalKeys;
-  document.getElementById('statActive').textContent = data.activeKeys;
-  document.getElementById('statBlocked').textContent = data.blockedKeys;
+function setServerState(online, text) {
+  const el = document.getElementById('serverState');
+  el.className = 'server-state ' + (online ? 'online' : 'offline');
+  el.querySelector('span:last-child').textContent = text;
+}
 
+function showPageError(message) {
+  const el = document.getElementById('pageError');
+  if (!message) {
+    el.style.display = 'none';
+    el.textContent = '';
+    return;
+  }
+  el.textContent = message;
+  el.style.display = 'block';
+}
+
+function esc(value) {
+  return String(value == null ? '' : value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+async function apiFetch(path, options) {
+  options = options || {};
+  const headers = Object.assign({}, options.headers || {});
+
+  if (options.body && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (token) {
+    headers.Authorization = 'Bearer ' + token;
+  }
+
+  let response;
+  try {
+    response = await fetch(path, Object.assign({}, options, { headers: headers }));
+  } catch (error) {
+    setServerState(false, 'Server unreachable');
+    throw new Error('Could not connect to Admin Server: ' + (error && error.message ? error.message : error));
+  }
+
+  const raw = await response.text();
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    data = { ok: false, message: raw || 'Invalid server response.' };
+  }
+
+  if (response.status === 401) {
+    localStorage.removeItem('adminToken');
+    token = '';
+    showAuth(data.message || 'Admin session expired. Please sign in again.');
+  }
+
+  if (!response.ok || data.ok === false) {
+    throw new Error(data.message || data.detail || ('Request failed with status ' + response.status));
+  }
+
+  setServerState(true, 'Persistent server online');
+  return data;
+}
+
+async function checkHealth() {
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store' });
+    const data = await response.json();
+    if (!response.ok || !data.ok) throw new Error(data.message || 'Health check failed');
+    setServerState(true, 'Persistent server online');
+    return true;
+  } catch (error) {
+    setServerState(false, 'Server offline');
+    showPageError('Backend connection failed: ' + (error && error.message ? error.message : error));
+    return false;
+  }
+}
+
+async function login() {
+  const button = document.getElementById('loginBtn');
+  const pass = document.getElementById('adminPass').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (!pass) {
+    errorEl.textContent = 'Enter the admin password.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  button.disabled = true;
+  errorEl.style.display = 'none';
+
+  try {
+    const response = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.ok || !data.token) {
+      throw new Error(data.message || 'Login failed.');
+    }
+
+    token = data.token;
+    localStorage.setItem('adminToken', token);
+    document.getElementById('adminPass').value = '';
+    hideAuth();
+    showPageError('');
+    await loadDashboard();
+  } catch (error) {
+    errorEl.textContent = error && error.message ? error.message : String(error);
+    errorEl.style.display = 'block';
+    setServerState(false, 'Login failed');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function logout() {
+  const oldToken = token;
+
+  try {
+    if (oldToken) {
+      await apiFetch('/api/admin/logout', {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
+    }
+  } catch {}
+
+  localStorage.removeItem('adminToken');
+  token = '';
+  showAuth('Signed out.');
+}
+
+function makeActionButton(text, className, handler, title) {
+  const button = document.createElement('button');
+  button.textContent = text;
+  button.className = className;
+  if (title) button.title = title;
+  button.addEventListener('click', handler);
+  return button;
+}
+
+function renderLicenses(licenses) {
   const tbody = document.getElementById('licenseTableBody');
   tbody.innerHTML = '';
 
-  data.licenses.forEach(l => {
+  if (!Array.isArray(licenses) || licenses.length === 0) {
     const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><span class="key-code">${l.key}</span></td>
-      <td><b>${l.user}</b></td>
-      <td>${l.contact}</td>
-      <td style="font-family:monospace;font-size:11px">${l.deviceId || '<span style="color:#f59e0b">Unbound</span>'}</td>
-      <td style="font-size:12px;color:var(--muted)">${l.lastActive === 'Never' ? 'Never' : new Date(l.lastActive).toLocaleString()}</td>
-      <td><span class="badge ${l.status}">${l.status}</span></td>
-      <td style="display:flex;gap:6px">
-        <button class="${l.status === 'active' ? 'danger' : 'success'}" style="padding:5px 10px;font-size:11px" onclick="toggleStatus('${l.key}')">
-          ${l.status === 'active' ? '🛑 Block' : '✅ Unblock'}
-        </button>
-        <button class="secondary" style="padding:5px 8px;font-size:11px" onclick="resetDevice('${l.key}')" title="Reset PC">🔄 Reset PC</button>
-        <button class="secondary" style="padding:5px 8px;font-size:11px;background:#450a0a;color:#fca5a5" onclick="deleteKey('${l.key}')">🗑️</button>
-      </td>
-    `;
+    tr.innerHTML = '<td colspan="7" style="text-align:center;color:var(--muted)">No license keys yet.</td>';
+    tbody.appendChild(tr);
+    return;
+  }
+
+  licenses.forEach(function (l) {
+    const tr = document.createElement('tr');
+
+    const keyTd = document.createElement('td');
+    const keySpan = document.createElement('span');
+    keySpan.className = 'key-code';
+    keySpan.textContent = l.key || '';
+    keyTd.appendChild(keySpan);
+
+    const userTd = document.createElement('td');
+    const userStrong = document.createElement('b');
+    userStrong.textContent = l.user || '';
+    userTd.appendChild(userStrong);
+
+    const contactTd = document.createElement('td');
+    contactTd.textContent = l.contact || '';
+
+    const deviceTd = document.createElement('td');
+    deviceTd.style.fontFamily = 'monospace';
+    deviceTd.style.fontSize = '11px';
+    if (l.deviceId) {
+      deviceTd.textContent = l.deviceId;
+    } else {
+      const unbound = document.createElement('span');
+      unbound.textContent = 'Unbound';
+      unbound.style.color = '#f59e0b';
+      deviceTd.appendChild(unbound);
+    }
+
+    const activeTd = document.createElement('td');
+    activeTd.style.fontSize = '12px';
+    activeTd.style.color = 'var(--muted)';
+    activeTd.textContent =
+      !l.lastActive || l.lastActive === 'Never'
+        ? 'Never'
+        : new Date(l.lastActive).toLocaleString();
+
+    const statusTd = document.createElement('td');
+    const badge = document.createElement('span');
+    badge.className = 'badge ' + (l.status === 'blocked' ? 'blocked' : 'active');
+    badge.textContent = l.status || 'active';
+    statusTd.appendChild(badge);
+
+    const actionsTd = document.createElement('td');
+    actionsTd.className = 'actions';
+
+    actionsTd.appendChild(
+      makeActionButton(
+        l.status === 'active' ? '🛑 Block' : '✅ Unblock',
+        l.status === 'active' ? 'danger' : 'success',
+        function () { toggleStatus(l.key); }
+      )
+    );
+
+    actionsTd.appendChild(
+      makeActionButton(
+        '✏️ Edit',
+        'secondary',
+        function () { editLicense(l); }
+      )
+    );
+
+    actionsTd.appendChild(
+      makeActionButton(
+        '🔄 Reset PC',
+        'secondary',
+        function () { resetDevice(l.key); },
+        'Clear device binding'
+      )
+    );
+
+    actionsTd.appendChild(
+      makeActionButton(
+        '🗑️',
+        'secondary',
+        function () { deleteKey(l.key); },
+        'Delete license'
+      )
+    );
+
+    tr.appendChild(keyTd);
+    tr.appendChild(userTd);
+    tr.appendChild(contactTd);
+    tr.appendChild(deviceTd);
+    tr.appendChild(activeTd);
+    tr.appendChild(statusTd);
+    tr.appendChild(actionsTd);
+
     tbody.appendChild(tr);
   });
 }
 
+async function loadDashboard() {
+  if (!token) {
+    showAuth();
+    return;
+  }
+
+  showPageError('');
+
+  try {
+    const data = await apiFetch('/api/admin/stats', { cache: 'no-store' });
+
+    document.getElementById('statTotal').textContent = data.totalKeys || 0;
+    document.getElementById('statActive').textContent = data.activeKeys || 0;
+    document.getElementById('statBlocked').textContent = data.blockedKeys || 0;
+
+    renderLicenses(data.licenses || []);
+  } catch (error) {
+    showPageError(error && error.message ? error.message : String(error));
+
+    const tbody = document.getElementById('licenseTableBody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#fca5a5">Could not load live license data.</td></tr>';
+  }
+}
+
 async function createLicense() {
-  const user = document.getElementById('newUserName').value;
-  const contact = document.getElementById('newUserContact').value;
-  if (!user) return alert("Please enter Student name!");
+  const button = document.getElementById('createBtn');
+  const user = document.getElementById('newUserName').value.trim();
+  const contact = document.getElementById('newUserContact').value.trim();
 
-  await fetch('/api/admin/create-key', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user, contact })
-  });
+  if (!user) {
+    alert('Please enter Student name!');
+    return;
+  }
 
-  document.getElementById('newUserName').value = '';
-  document.getElementById('newUserContact').value = '';
-  loadDashboard();
+  button.disabled = true;
+
+  try {
+    await apiFetch('/api/admin/create-key', {
+      method: 'POST',
+      body: JSON.stringify({ user: user, contact: contact })
+    });
+
+    document.getElementById('newUserName').value = '';
+    document.getElementById('newUserContact').value = '';
+    await loadDashboard();
+  } catch (error) {
+    alert(error && error.message ? error.message : String(error));
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function toggleStatus(key) {
-  await fetch('/api/admin/toggle-status', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key })
-  });
-  loadDashboard();
+  try {
+    await apiFetch('/api/admin/toggle-status', {
+      method: 'POST',
+      body: JSON.stringify({ key: key })
+    });
+    await loadDashboard();
+  } catch (error) {
+    alert(error && error.message ? error.message : String(error));
+  }
+}
+
+async function editLicense(license) {
+  const user = prompt('Student name:', license.user || '');
+  if (user === null) return;
+
+  const contact = prompt('Phone / WhatsApp:', license.contact || '');
+  if (contact === null) return;
+
+  try {
+    await apiFetch('/api/admin/update-license', {
+      method: 'POST',
+      body: JSON.stringify({
+        key: license.key,
+        user: user,
+        contact: contact
+      })
+    });
+    await loadDashboard();
+  } catch (error) {
+    alert(error && error.message ? error.message : String(error));
+  }
 }
 
 async function resetDevice(key) {
-  if (!confirm("Clear device binding for this key? User can connect on a new computer.")) return;
-  await fetch('/api/admin/reset-device', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key })
-  });
-  loadDashboard();
+  if (!confirm('Clear device binding for this key? User can connect on a new computer.')) return;
+
+  try {
+    await apiFetch('/api/admin/reset-device', {
+      method: 'POST',
+      body: JSON.stringify({ key: key })
+    });
+    await loadDashboard();
+  } catch (error) {
+    alert(error && error.message ? error.message : String(error));
+  }
 }
 
 async function deleteKey(key) {
-  if (!confirm("Permanently delete this license key?")) return;
-  await fetch('/api/admin/delete-key', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key })
-  });
-  loadDashboard();
+  if (!confirm('Permanently delete this license key?')) return;
+
+  try {
+    await apiFetch('/api/admin/delete-key', {
+      method: 'POST',
+      body: JSON.stringify({ key: key })
+    });
+    await loadDashboard();
+  } catch (error) {
+    alert(error && error.message ? error.message : String(error));
+  }
 }
 
-if (token) loadDashboard();
+document.getElementById('adminPass').addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') login();
+});
+
+(async function boot() {
+  await checkHealth();
+
+  if (token) {
+    hideAuth();
+    await loadDashboard();
+  } else {
+    showAuth();
+  }
+})();
 </script>
 </body>
 </html>
