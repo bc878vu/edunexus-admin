@@ -6,14 +6,26 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
-  'https://cprpndovdfnkvekewstv.supabase.co';
-
-const SUPABASE_ANON_KEY =
-  process.env.SUPABASE_ANON_KEY ||
+const EDUNEXUS_SUPABASE_URL = 'https://cprpndovdfnkvekewstv.supabase.co';
+const EDUNEXUS_SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwcnBuZG92ZGZua3Zla2V3c3R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MTcwMjgsImV4cCI6MjEwNDk5MzAyOH0.e2R0UMJYnWaLyqpvzfH_Z6SEYAQGGQmlSiPmA0tJPxg';
 
+function safeSupabaseUrl(value) {
+  const url = String(value || '').trim().replace(/\/+$/, '');
+  return url.includes('cprpndovdfnkvekewstv.supabase.co')
+    ? url
+    : EDUNEXUS_SUPABASE_URL;
+}
+
+function safeSupabaseKey(value) {
+  const key = String(value || '').trim();
+  return key && key.includes('eyJ')
+    ? key
+    : EDUNEXUS_SUPABASE_ANON_KEY;
+}
+
+const SUPABASE_URL = safeSupabaseUrl(process.env.SUPABASE_URL);
+const SUPABASE_ANON_KEY = safeSupabaseKey(process.env.SUPABASE_ANON_KEY);
 const RPC_BASE = SUPABASE_URL + '/rest/v1/rpc';
 
 app.disable('x-powered-by');
@@ -26,11 +38,20 @@ app.use(
       'Content-Type',
       'Authorization',
       'X-Admin-Token'
-    ]
+    ],
+    maxAge: 86400
   })
 );
 
 app.use(express.json({ limit: '32kb' }));
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cache-Control', req.path.startsWith('/api/') ? 'no-store' : 'no-cache');
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 function adminToken(req) {
@@ -41,50 +62,79 @@ function adminToken(req) {
   return String(req.headers['x-admin-token'] || '').trim();
 }
 
-async function callRpc(functionName, params = {}) {
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(url, options, timeoutMs = 9000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(RPC_BASE + '/' + functionName, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-        Accept: 'application/json'
-      },
-      body: JSON.stringify(params),
+    return await fetch(url, {
+      ...options,
       signal: controller.signal
     });
-
-    const raw = await response.text();
-
-    let data = null;
-    try {
-      data = raw ? JSON.parse(raw) : {};
-    } catch {
-      data = {
-        ok: false,
-        message: raw || 'Invalid response from database API.'
-      };
-    }
-
-    if (!response.ok) {
-      const message =
-        (data && (data.message || data.error_description || data.hint)) ||
-        'Database API request failed.';
-
-      const error = new Error(message);
-      error.status = response.status >= 400 ? response.status : 502;
-      error.upstream = data;
-      throw error;
-    }
-
-    return data;
   } finally {
-    clearTimeout(timeout);
+    clearTimeout(timer);
   }
+}
+
+async function callRpc(functionName, params = {}) {
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const response = await fetchWithTimeout(
+        RPC_BASE + '/' + functionName,
+        {
+          method: 'POST',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(params)
+        }
+      );
+
+      const raw = await response.text();
+
+      let data;
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        data = {
+          ok: false,
+          message: raw || 'Invalid response from database API.'
+        };
+      }
+
+      if (!response.ok) {
+        const message =
+          (data && (data.message || data.error_description || data.hint || data.details)) ||
+          'Database API request failed.';
+
+        const error = new Error(message);
+        error.status = response.status >= 400 ? response.status : 502;
+        error.upstream = data;
+        error.rpc = functionName;
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < 2) {
+        await sleep(250);
+        continue;
+      }
+    }
+  }
+
+  throw lastError || new Error('Unknown database connection error.');
 }
 
 function sendRpcResult(res, data) {
@@ -114,10 +164,25 @@ function asyncRoute(handler) {
 app.get(
   '/api/health',
   asyncRoute(async (_req, res) => {
+    const startedAt = Date.now();
     const data = await callRpc('edunexus_admin_health', {});
-    return sendRpcResult(res, data);
+
+    return res.json({
+      ...data,
+      server: 'online',
+      database: data && data.ok ? 'online' : 'unknown',
+      projectRef: 'cprpndovdfnkvekewstv',
+      latencyMs: Date.now() - startedAt
+    });
   })
 );
+
+app.get('/api/verify', (_req, res) => {
+  res.status(405).json({
+    ok: false,
+    message: 'Use POST /api/verify with JSON body: { key, deviceId }.'
+  });
+});
 
 app.post(
   '/api/verify',
@@ -241,6 +306,7 @@ app.use((error, req, res, _next) => {
   console.error('Admin API error:', {
     path: req.path,
     message: error && error.message,
+    rpc: error && error.rpc,
     upstream: error && error.upstream
   });
 
@@ -249,17 +315,16 @@ app.use((error, req, res, _next) => {
     message: aborted
       ? 'Admin database request timed out.'
       : 'Could not connect to the persistent admin database.',
-    detail:
-      process.env.NODE_ENV === 'production'
-        ? undefined
-        : String((error && error.message) || error)
+    errorCode: aborted ? 'DB_TIMEOUT' : 'DB_CONNECTION_FAILED',
+    rpc: error && error.rpc ? error.rpc : undefined,
+    upstreamStatus: Number(error && error.status) || undefined
   });
 });
 
 app.listen(PORT, () => {
   console.log('EduNexus Admin Server running on port ' + PORT);
   console.log('Persistent storage: Supabase');
-  console.log('Dashboard URL: http://localhost:' + PORT);
+  console.log('Supabase project: cprpndovdfnkvekewstv');
 });
 
 module.exports = app;
